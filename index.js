@@ -91,6 +91,16 @@ const rightSide = Body.create({
 });
 Body.rotate(rightSide, Math.PI);
 
+const rightWall = Bodies.rectangle(15.03 * s, 9 * s, 1 * s, 14 * s, {
+  isStatic: true,
+  render: { fillStyle: "#000" },
+});
+
+const topWall = Bodies.polygon(15.03 * s, 9 * s, 999, 2 * s, {
+  isStatic: true,
+  render: { fillStyle: "#000" },
+});
+
 const bottom = [
   Bodies.rectangle(
     document.body.clientWidth / 2,
@@ -154,10 +164,22 @@ for (let i = 0; i < 9; i++) {
 }
 
 const walls = [
-  Bodies.rectangle(width / 2, -1, width, 1, { isStatic: true,render: { fillStyle: "orange"} }), // top
-  Bodies.rectangle(-1, height / 2, 1, height, { isStatic: true,render: { fillStyle: "orange" }}), // left
-  Bodies.rectangle(width + 1, height / 2, 1, height, { isStatic: true,render: { fillStyle: "orange" }}), // right
-  Bodies.rectangle(width / 2, height + 1, width, 1, { isStatic: true,render: { fillStyle: "orange" }}), // bottom
+  Bodies.rectangle(width / 2, -1, width, 1, {
+    isStatic: true,
+    render: { fillStyle: "orange" },
+  }), // top
+  Bodies.rectangle(-1, height / 2, 1, height, {
+    isStatic: true,
+    render: { fillStyle: "orange" },
+  }), // left
+  Bodies.rectangle(width + 1, height / 2, 1, height, {
+    isStatic: true,
+    render: { fillStyle: "orange" },
+  }), // right
+  Bodies.rectangle(width / 2, height + 1, width, 1, {
+    isStatic: true,
+    render: { fillStyle: "orange" },
+  }), // bottom
 ];
 const disc = Bodies.circle(
   document.body.clientWidth / 2 - 5.8 * s,
@@ -178,7 +200,7 @@ const mouseConstraint = MouseConstraint.create(engine, {
   constraint: {
     stiffness: 1,
     render: {
-      visible: false,
+      visible: true,
     },
   },
 });
@@ -190,17 +212,17 @@ Events.on(engine, "collisionStart", function (event) {
   for (var i = 0, j = pairs.length; i != j; ++i) {
     var pair = pairs[i];
     if (pair.bodyA.isPegs) {
-      console.log("🚀 ~ file: index.js ~ line 191 ~ pair", pair)
+      console.log("🚀 ~ file: index.js ~ line 191 ~ pair", pair);
       pair.bodyA.render.fillStyle = "red";
       console.log(pair.bodyA.__data__, "was hit!");
       // pickWinner(pair.bodyA.__data__);
-      addPoints()
+      addPoints();
     } else if (pair.bodyB.isPegs) {
-      console.log("🚀 ~ file: index.js ~ line 191 ~ pair", pair)
+      console.log("🚀 ~ file: index.js ~ line 191 ~ pair", pair);
       pair.bodyB.render.fillStyle = "red";
       console.log(pair.bodyB.__data__, "was hit!");
       // pickWinner(pair.bodyB.__data__);
-      addPoints()
+      addPoints();
     }
   }
   // for (let index = 0, length = pairs.length; index != length; index++) {
@@ -235,6 +257,8 @@ World.add(engine.world, [
   ...pegs,
   leftSide,
   rightSide,
+  rightWall,
+  topWall,
   ...bottom,
   ...sensors,
   disc,
@@ -297,6 +321,6 @@ function pickWinner(i) {
   names[i].classList.add("winner");
 }
 
-function addPoints(i){
-  scoreLabel.innerHTML = String(Number(scoreLabel.innerHTML) + 1)
+function addPoints(i) {
+  scoreLabel.innerHTML = String(Number(scoreLabel.innerHTML) + 1);
 }
