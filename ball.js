@@ -26,6 +26,17 @@
   const PADDLE_PULL = 0.002;
   const MAX_VELOCITY = 50;
 
+  const PEG_SIZE = 2;
+  const PINBALL_SIZE = 10;
+
+  const PEGS_GROUP = {
+    BASE_SIZE: 28,
+    TOP_OFFSET: 250,
+    LEFT_OFFSET: 45,
+    ROW: 18,
+    CLOS: 14,
+  };
+
   // score elements
   let $currentScore = $(".current-score span");
   let $highScore = $(".high-score span");
@@ -85,15 +96,12 @@
 
   // 网格点
   const pegs = [];
-  const s = 45;
-  for (let row = 0; row < 11; row++) {
-    const cols = row % 2 ? 9 : 8;
-    const offset = row % 2 ? 0 : s/2;
-    const topOffset = 240;
-    const leftOffset = 40;
-    const y = topOffset + s * row;
+  for (let row = 0; row < PEGS_GROUP.ROW; row++) {
+    const cols = row % 2 ? PEGS_GROUP.CLOS : PEGS_GROUP.CLOS - 1;
+    const offset = row % 2 ? 0 : PEGS_GROUP.BASE_SIZE / 2;
+    const y = PEGS_GROUP.TOP_OFFSET + PEGS_GROUP.BASE_SIZE * row;
     for (let col = 0; col < cols; col++) {
-      const x = leftOffset + s * col + offset;
+      const x = PEGS_GROUP.LEFT_OFFSET + PEGS_GROUP.BASE_SIZE * col + offset;
       pegs.push(peg(x, y));
     }
   }
@@ -133,8 +141,11 @@
       // bumper(345, 430),
 
       // shooter lane wall
-      wall(440, 520, 20, 560, COLOR.OUTER),
+      wall(445, 520, 20, 610, COLOR.OUTER),
 
+      // 三角墙
+      sideWall(),
+      sideWall(true),
       // drops (left, right)
       // path(25, 360, PATHS.DROP_LEFT),
       // path(425, 360, PATHS.DROP_RIGHT),
@@ -156,7 +167,7 @@
       // path(371, 740, PATHS.APRON_RIGHT),
 
       // reset zones (center, right)
-      reset(225, 50),
+      reset(225, 410),
       reset(465, 30),
     ]);
   }
@@ -260,8 +271,9 @@
 
   function createPinball() {
     // x/y are set to when pinball is launched
-    pinball = Matter.Bodies.circle(0, 0, 14, {
+    pinball = Matter.Bodies.circle(0, 0, PINBALL_SIZE, {
       label: "pinball",
+      restitution: 0.9,
       collisionFilter: {
         group: stopperGroup,
       },
@@ -275,15 +287,15 @@
 
   function createEvents() {
     // events for when the pinball hits stuff
-    Matter.Events.on(engine, "collisionStart", function(event) {
+    Matter.Events.on(engine, "collisionStart", function (event) {
       let pairs = event.pairs;
-      pairs.forEach(function(pair) {
+      pairs.forEach(function (pair) {
         if (pair.bodyB.label === "pinball") {
           switch (pair.bodyA.label) {
             case "reset":
               launchPinball();
               break;
-            case "bumper":
+            case "peg":
               pingBumper(pair.bodyA);
               break;
           }
@@ -292,7 +304,7 @@
     });
 
     // regulate pinball
-    Matter.Events.on(engine, "beforeUpdate", function(event) {
+    Matter.Events.on(engine, "beforeUpdate", function (event) {
       // bumpers can quickly multiply velocity, so keep that in check
       Matter.Body.setVelocity(pinball, {
         x: Math.max(Math.min(pinball.velocity.x, MAX_VELOCITY), -MAX_VELOCITY),
@@ -320,7 +332,7 @@
     );
 
     // keyboard paddle events
-    $("body").on("keydown", function(e) {
+    $("body").on("keydown", function (e) {
       if (e.which === 37) {
         // left arrow key
         isLeftPaddleUp = true;
@@ -329,7 +341,7 @@
         isRightPaddleUp = true;
       }
     });
-    $("body").on("keyup", function(e) {
+    $("body").on("keyup", function (e) {
       if (e.which === 37) {
         // left arrow key
         isLeftPaddleUp = false;
@@ -341,17 +353,17 @@
 
     // click/tap paddle events
     $(".left-trigger")
-      .on("mousedown touchstart", function(e) {
+      .on("mousedown touchstart", function (e) {
         isLeftPaddleUp = true;
       })
-      .on("mouseup touchend", function(e) {
+      .on("mouseup touchend", function (e) {
         isLeftPaddleUp = false;
       });
     $(".right-trigger")
-      .on("mousedown touchstart", function(e) {
+      .on("mousedown touchstart", function (e) {
         isRightPaddleUp = true;
       })
-      .on("mouseup touchend", function(e) {
+      .on("mouseup touchend", function (e) {
         isRightPaddleUp = false;
       });
   }
@@ -368,7 +380,7 @@
 
     // flash color
     bumper.render.fillStyle = COLOR.BUMPER_LIT;
-    setTimeout(function() {
+    setTimeout(function () {
       bumper.render.fillStyle = COLOR.BUMPER;
     }, 100);
   }
@@ -440,13 +452,46 @@
   }
 
   function peg(x, y) {
-    return Matter.Bodies.circle(x, y, 5, {
+    return Matter.Bodies.circle(x, y, PEG_SIZE, {
       label: "peg",
       isStatic: true,
       render: {
         fillStyle: COLOR.BUMPER,
       },
     });
+  }
+
+  // 三角组合墙
+  function sideWall(right) {
+    console.log("🚀 ~ file: ball.js ~ line 466 ~ sideWall ~ right", right);
+    const s = 28;
+    const sideWallPoints = [0, 0, s / 2, 0, s, s, s / 2, 2 * s, 0, 2 * s];
+    const sideWallArray = [];
+    for (let i = 0; i < 9; i++) {
+      sideWallArray.push(
+        Matter.Bodies.fromVertices(
+          right ? 438 : 17,
+          250 + 2 * s * i,
+          Matter.Vertices.fromPath(sideWallPoints.join(" ")),
+          {
+            render: { fillStyle: COLOR.OUTER },
+          }
+        )
+      );
+    }
+    let sideWallBody = Matter.Body.create({
+      parts: sideWallArray,
+      isStatic: true,
+    });
+    if (right) {
+      console.log(
+        "🚀 ~ file: ball.js ~ line 486 ~ sideWall ~ sideWallBody",
+        sideWallBody
+      );
+      Matter.Body.rotate(sideWallBody, Math.PI);
+      // return Matter.Body.rotate(sideWallBody, 180);
+    }
+    return sideWallBody;
   }
 
   // invisible bodies to constrict paddles
@@ -465,7 +510,7 @@
       plugin: {
         attractors: [
           // stopper is always a, other body is b
-          function(a, b) {
+          function (a, b) {
             if (b.label === attracteeLabel) {
               let isPaddleUp =
                 side === "left" ? isLeftPaddleUp : isRightPaddleUp;
