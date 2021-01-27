@@ -161,13 +161,13 @@
       // flipper walls (left, right);
       // wall(93, 624, 20, 98, COLOR.INNER, -0.96),
       // wall(357, 624, 20, 98, COLOR.INNER, 0.96),
-
+      awardArea(300, 762, 4, 40, COLOR.INNER, 0),
       // aprons (left, right)
       // path(79, 740, PATHS.APRON_LEFT),
       // path(371, 740, PATHS.APRON_RIGHT),
 
       // reset zones (center, right)
-      reset(225, 410),
+      //   reset(225, 410),
       reset(465, 30),
     ]);
   }
@@ -287,9 +287,9 @@
 
   function createEvents() {
     // events for when the pinball hits stuff
-    Matter.Events.on(engine, "collisionStart", function (event) {
+    Matter.Events.on(engine, "collisionStart", function(event) {
       let pairs = event.pairs;
-      pairs.forEach(function (pair) {
+      pairs.forEach(function(pair) {
         if (pair.bodyB.label === "pinball") {
           switch (pair.bodyA.label) {
             case "reset":
@@ -304,7 +304,7 @@
     });
 
     // regulate pinball
-    Matter.Events.on(engine, "beforeUpdate", function (event) {
+    Matter.Events.on(engine, "beforeUpdate", function(event) {
       // bumpers can quickly multiply velocity, so keep that in check
       Matter.Body.setVelocity(pinball, {
         x: Math.max(Math.min(pinball.velocity.x, MAX_VELOCITY), -MAX_VELOCITY),
@@ -332,7 +332,7 @@
     );
 
     // keyboard paddle events
-    $("body").on("keydown", function (e) {
+    $("body").on("keydown", function(e) {
       if (e.which === 37) {
         // left arrow key
         isLeftPaddleUp = true;
@@ -341,7 +341,7 @@
         isRightPaddleUp = true;
       }
     });
-    $("body").on("keyup", function (e) {
+    $("body").on("keyup", function(e) {
       if (e.which === 37) {
         // left arrow key
         isLeftPaddleUp = false;
@@ -353,17 +353,17 @@
 
     // click/tap paddle events
     $(".left-trigger")
-      .on("mousedown touchstart", function (e) {
+      .on("mousedown touchstart", function(e) {
         isLeftPaddleUp = true;
       })
-      .on("mouseup touchend", function (e) {
+      .on("mouseup touchend", function(e) {
         isLeftPaddleUp = false;
       });
     $(".right-trigger")
-      .on("mousedown touchstart", function (e) {
+      .on("mousedown touchstart", function(e) {
         isRightPaddleUp = true;
       })
-      .on("mouseup touchend", function (e) {
+      .on("mouseup touchend", function(e) {
         isRightPaddleUp = false;
       });
   }
@@ -380,7 +380,7 @@
 
     // flash color
     bumper.render.fillStyle = COLOR.BUMPER_LIT;
-    setTimeout(function () {
+    setTimeout(function() {
       bumper.render.fillStyle = COLOR.BUMPER;
     }, 100);
   }
@@ -418,6 +418,24 @@
         fillStyle: color,
       },
     });
+  }
+
+  // award area
+  function awardArea(x, y, width, height, color) {
+    let awardAreaGroup = [];
+    for (let index = 0; index < PEGS_GROUP.CLOS; index++) {
+    const x = PEGS_GROUP.LEFT_OFFSET + PEGS_GROUP.BASE_SIZE * index;
+      awardAreaGroup.push(
+        Matter.Bodies.rectangle(x, 762, width, height, {
+          isStatic: true,
+          chamfer: { radius: 2 },
+          render: {
+            fillStyle: color,
+          },
+        })
+      );
+    }
+    return Matter.Body.create({ parts: awardAreaGroup, isStatic: true });
   }
 
   // bodies created from SVG paths
@@ -510,7 +528,7 @@
       plugin: {
         attractors: [
           // stopper is always a, other body is b
-          function (a, b) {
+          function(a, b) {
             if (b.label === attracteeLabel) {
               let isPaddleUp =
                 side === "left" ? isLeftPaddleUp : isRightPaddleUp;
